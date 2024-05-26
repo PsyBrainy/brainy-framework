@@ -25,7 +25,14 @@ func main() {
 	exampleService := &service.ExampleService{}
 	fw.RegisterComponent("ExampleService", exampleService)
 
-	authMiddleware := middleware.NewAuthMiddleware(http.DefaultServeMux)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Hello, World!"))
+	})
+
+	authMiddleware := middleware.NewAuthMiddleware(mux)
+
+	loggingMiddleware := middleware.NewLoggingMiddleware(authMiddleware)
 
 	if err := fw.Start(); err != nil {
 		panic(err)
@@ -33,5 +40,5 @@ func main() {
 	defer fw.Stop()
 
 	http.Handle("/", authMiddleware)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8080", loggingMiddleware)
 }

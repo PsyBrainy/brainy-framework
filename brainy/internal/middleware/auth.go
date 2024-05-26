@@ -14,7 +14,7 @@ func NewAuthMiddleware(next http.Handler) *AuthMiddleware {
 
 func (a *AuthMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	user := r.Header.Get("X-User")
-	if user == "" {
+	if user != "martu" {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
