@@ -13,17 +13,19 @@ import (
 )
 
 func main() {
-	fw := framework.NewFramework()
+	nm := framework.NewNeuronManager()
 
-	container := container.NewContainer()
+	neuralNetwork := container.NewNeuralNetwork()
 	db, _ := sql.Open("sqlite3", ":memory:")
-	container.Register(db)
+	neuralNetwork.Register(db, framework.Singleton)
 
 	tm := transaction.NewTransactionManager(db)
-	container.Register(tm)
+	neuralNetwork.Register(tm, framework.Singleton)
 
 	exampleService := &service.ExampleService{}
-	fw.RegisterComponent("ExampleService", exampleService)
+	neuralNetwork.Register(exampleService, framework.Prototype)
+	resolvedService := neuralNetwork.Resolve(exampleService).(*service.ExampleService)
+	nm.RegisterNeuron("ExampleService", resolvedService)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -34,11 +36,10 @@ func main() {
 
 	loggingMiddleware := middleware.NewLoggingMiddleware(authMiddleware)
 
-	if err := fw.Start(); err != nil {
+	if err := nm.Start(); err != nil {
 		panic(err)
 	}
-	defer fw.Stop()
+	defer nm.Stop()
 
-	http.Handle("/", authMiddleware)
 	http.ListenAndServe(":8080", loggingMiddleware)
 }
